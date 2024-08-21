@@ -26,7 +26,7 @@ struct dist info = {
 	.col8 = BWHITE "",
 	.getPkgCount = "echo unsupported",
 };
-char *username, *osname, *shellname, *pkgCount;
+char *username, *osname, *shellname, *pkgCount, *containerNumber;
 char *krnlver;
 long uptimeH, uptimeM;
 
@@ -98,6 +98,13 @@ void *user()
 	   are allowed in UNIX-like operating
 	   systems. I'll have to look into it */
 	/* username = lowerCase(username); */
+
+	return NULL;
+}
+
+void *containers()
+{
+	containerNumber = pipeRead("docker ps -q | wc -l");
 
 	return NULL;
 }
@@ -538,26 +545,26 @@ int main()
 	uname(&sysInfo);
 	pthread_t threads[6];
 
-	pthread_create(&threads[0], NULL, user, NULL);
-	pthread_create(&threads[1], NULL, os, NULL);
-	pthread_create(&threads[2], NULL, kernel, NULL);
-	pthread_create(&threads[3], NULL, uptime, NULL);
-	pthread_create(&threads[4], NULL, shell, NULL);
+	pthread_create(&threads[0], NULL, os, NULL);
+	pthread_create(&threads[1], NULL, kernel, NULL);
+	pthread_create(&threads[2], NULL, uptime, NULL);
+	pthread_create(&threads[3], NULL, shell, NULL);
+	pthread_create(&threads[4], NULL, containers, NULL);
 
-	pthread_join(threads[0], NULL);
 	/* os function must be run to get info.col1 */
-	pthread_join(threads[1], NULL);
+	pthread_join(threads[0], NULL);
 	printf("%s", info.col1);
-	printf("%s    %s%s%s\n", info.col2, UserText, TextColour, username);
-	printf("%s    %s%s%s\n", info.col3, OsText, TextColour, osname);
+	printf("%s    %s%s%s\n", info.col2, OsText, TextColour, osname);
+	pthread_join(threads[1], NULL);
+	printf("%s    %s%s%s\n", info.col3, KernelText, TextColour, krnlver);
 	pthread_join(threads[2], NULL);
-	printf("%s    %s%s%s\n", info.col4, KernelText, TextColour, krnlver);
-	pthread_join(threads[3], NULL);
-	printf("%s    %s%s%ldh %ldm\n", info.col5, UptimeText, TextColour, uptimeH,
+	printf("%s    %s%s%ldh %ldm\n", info.col4, UptimeText, TextColour, uptimeH,
 	       uptimeM);
+	pthread_join(threads[3], NULL);
+	printf("%s    %s%s%s\n", info.col5, ShellText, TextColour, shellname);
 	pthread_join(threads[4], NULL);
-	printf("%s    %s%s%s\n", info.col6, ShellText, TextColour, shellname);
-	printf("%s    %s%s%s\n", info.col7, PackageText, TextColour, pkgCount);
+	printf("%s    %s%s%s\n", info.col6, PackageText, TextColour, pkgCount);
+	printf("%s    %s%s%s\n", info.col7, ContainersText, TextColour, containerNumber);
 	printf("%s\n", info.col8);
 
 	pthread_create(&threads[5], NULL, colourDraw, NULL);
